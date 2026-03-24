@@ -1,8 +1,12 @@
-# Sync Code: Realtime Collaborative Code Editor
+# SyncLab
+: Realtime CollaboratyncLab
+ Editor
 
 ## Introduction
 
-Are you tired of sending code snippets back and forth, struggling to debug and collaborate with your team? Look no further! **Sync Code** is here to revolutionize the way you code together. This powerful and intuitive collaborative code editor is designed to empower developers, and teams to work seamlessly in real-time, regardless of their location. With **Sync Code**, you can code together, debug together, and ship faster, together.
+Are you tired of sending code snippets back and forth, struggling to debug and collaborate with your team? Look no further! **SyncLab
+** is here to revolutionize the way you code together. This powerful and intuitive collaborative code editor is designed to empower developers, and teams to work seamlessly in real-time, regardless of their location. With **SyncLab
+**, you can code together, debug together, and ship faster, together.
 
 ## Features
 
@@ -68,7 +72,8 @@ To run the app using docker, follow the steps below:
 4. Replace your username in docker-compose.yml file.
 5. Run the Docker Compose command: `docker-compose up -d`
 6. Go to `http://localhost:3000` to view the app
-7. Follow the steps 5-7 from the [Running via Docker Image](https://github.com/Mohitur669/Realtime-Collaborative-Code-Editor?tab=readme-ov-file#running-via-docker-image) section to create and join a room
+7. Follow the steps 5-7 from the [Running via Docker Image](https://github.com/Mohitur669/Realtime-CollaboratyncLab
+-Editor?tab=readme-ov-file#running-via-docker-image) section to create and join a room
 
 ### Running Locally
 
@@ -78,15 +83,18 @@ To run the app using docker, follow the steps below:
 4. To start the react app client run `npm start` in one terminal
 5. To start the server run `npm run server:dev` or `pm2 start server.js` in another terminal
 6. Go to `http://localhost:3000` to view the app
-7. Follow the steps 4-7 from the [Running via Docker Image](https://github.com/Mohitur669/Realtime-Collaborative-Code-Editor?tab=readme-ov-file#running-via-docker-image) section to create and join a room
+7. Follow the steps 4-7 from the [Running via Docker Image](https://github.com/Mohitur669/Realtime-CollaboratyncLab
+-Editor?tab=readme-ov-file#running-via-docker-image) section to create and join a room
 
 **Note:** To stop your server, press `Ctrl+c` or if you used "pm2", then use `pm2 stop server.js` in the terminal.
 
 ## Project Video
 
-https://github.com/Mohitur669/Realtime-Collaborative-Code-Editor/assets/79283402/14c17cc7-d23a-4d39-8af3-ef9e9fa8ef45
+https://github.com/Mohitur669/Realtime-CollaboratyncLab
+-Editor/assets/79283402/14c17cc7-d23a-4d39-8af3-ef9e9fa8ef45
 
-**Note:** If you find any bugs, create an Issue [here](https://github.com/Mohitur669/Realtime-Collaborative-Code-Editor/issues). I will try to fix it as soon as possible :) <br>
+**Note:** If you find any bugs, create an Issue [here](https://github.com/Mohitur669/Realtime-CollaboratyncLab
+-Editor/issues). I will try to fix it as soon as possible :) <br>
 In case you want to fix it yourself, feel free to make a pull request.
 
 ## Future Scope
@@ -106,7 +114,8 @@ If you want to make contribution to this projects, follow the steps below:
 2. Clone the forked repository <br>
 
 ```
-git clone https://github.com/your-github_username/Realtime-Collaborative-Code-Editor.git
+git clone https://github.com/your-github_username/Realtime-CollaboratyncLab
+-Editor.git
 ```
 
 3. cd into the cloned repository

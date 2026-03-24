@@ -38,6 +38,10 @@ const EditorPage = () => {
   const [lang, setLang] = useRecoilState(language);
   const [them, setThem] = useRecoilState(cmtheme);
   const [clients, setClients] = useState([]);
+  const [runInput, setRunInput] = useState("");
+  const [runOutput, setRunOutput] = useState("");
+  const [runStatus, setRunStatus] = useState("");
+  const [isRunning, setIsRunning] = useState(false);
 
   const socketRef = useRef(null);
   const codeRef = useRef(STARTER_CODES[lang] || STARTER_CODES.javascript);
@@ -187,6 +191,59 @@ const EditorPage = () => {
     updateEditorCode(newCode);
 
     toast.success(`${newLang.toUpperCase()} template loaded`);
+  };
+
+  const handleRunCode = async () => {
+    try {
+      setIsRunning(true);
+      setRunOutput("");
+      setRunStatus("Running...");
+
+      const currentCode =
+        editorInstanceRef.current?.getCode?.() || codeRef.current || "";
+
+      const response = await fetch("http://localhost:5000/api/run", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          code: currentCode,
+          language: lang,
+          stdin: runInput,
+        }),
+      });
+
+      const data = await response.json();
+      console.log("RUN RESPONSE:", data);
+
+      if (!data.success) {
+        setRunStatus("Execution Failed");
+        setRunOutput(
+          `${data.error || "Failed to run code"}\n\n${data.details || ""}`
+        );
+        return;
+      }
+
+      const result = data.result;
+
+      setRunStatus(result.status || "Completed");
+
+      const finalOutput =
+        result.stdout ||
+        result.stderr ||
+        result.compile_output ||
+        result.message ||
+        "No output";
+
+      setRunOutput(finalOutput);
+    } catch (error) {
+      console.error("Frontend run error:", error);
+      setRunStatus("Execution Failed");
+      setRunOutput(error.message || "Something went wrong while running the code.");
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   if (!location.state) {
@@ -352,7 +409,52 @@ const EditorPage = () => {
         </button>
       </div>
 
-      <div className="editorWrap">
+      <div
+        className="editorWrap"
+        style={{ display: "flex", flexDirection: "column" }}
+      >
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            padding: "10px 14px",
+            background: "#111827",
+            borderBottom: "1px solid #2d3748",
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <button
+            className="btn copyBtn"
+            onClick={handleRunCode}
+            disabled={isRunning}
+            style={{
+              background: "#4AED88",
+              color: "#000",
+              minWidth: "120px",
+            }}
+          >
+            {isRunning ? "Running..." : "Run Code"}
+          </button>
+
+          <input
+            type="text"
+            value={runInput}
+            onChange={(e) => setRunInput(e.target.value)}
+            placeholder="Optional input"
+            style={{
+              flex: 1,
+              minWidth: "220px",
+              padding: "10px 12px",
+              borderRadius: "8px",
+              border: "none",
+              outline: "none",
+              background: "#1f2937",
+              color: "#fff",
+            }}
+          />
+        </div>
+
         <Editor
           ref={editorInstanceRef}
           socketRef={socketRef}
@@ -361,6 +463,33 @@ const EditorPage = () => {
             codeRef.current = code;
           }}
         />
+
+        <div
+          style={{
+            background: "#0b1020",
+            color: "#e5e7eb",
+            borderTop: "1px solid #2d3748",
+            padding: "14px",
+            minHeight: "180px",
+          }}
+        >
+          <h3 style={{ marginTop: 0, color: "#4AED88" }}>Output</h3>
+          <p style={{ margin: "0 0 10px 0", color: "#9ca3af" }}>
+            Status: {runStatus || "Idle"}
+          </p>
+          <pre
+            style={{
+              margin: 0,
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+              fontFamily: "Cascadia Code, monospace",
+              fontSize: "14px",
+              lineHeight: "1.5",
+            }}
+          >
+            {runOutput || "Run your code to see output here..."}
+          </pre>
+        </div>
       </div>
     </div>
   );

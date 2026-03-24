@@ -8,11 +8,9 @@ import { language, cmtheme } from "../../src/atoms";
 import { useRecoilValue } from "recoil";
 import ACTIONS from "../actions/Actions";
 
-// CodeMirror
 import Codemirror from "codemirror";
 import "codemirror/lib/codemirror.css";
 
-// themes
 import "codemirror/theme/3024-day.css";
 import "codemirror/theme/3024-night.css";
 import "codemirror/theme/abbott.css";
@@ -77,17 +75,14 @@ import "codemirror/theme/yeti.css";
 import "codemirror/theme/yonce.css";
 import "codemirror/theme/zenburn.css";
 
-// modes
 import "codemirror/mode/clike/clike";
 import "codemirror/mode/javascript/javascript";
 import "codemirror/mode/python/python";
 
-// features
 import "codemirror/addon/edit/closetag";
 import "codemirror/addon/edit/closebrackets";
 import "codemirror/addon/scroll/simplescrollbars.css";
 
-// search
 import "codemirror/addon/search/search.js";
 import "codemirror/addon/search/searchcursor.js";
 import "codemirror/addon/search/jump-to-line.js";
