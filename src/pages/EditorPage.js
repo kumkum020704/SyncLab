@@ -14,14 +14,33 @@ import {
   useParams,
 } from "react-router-dom";
 
+const STARTER_CODES = {
+  javascript: `console.log("Hello World");`,
+
+  python: `print("Hello World")`,
+
+  cpp: `#include <iostream>
+using namespace std;
+
+int main() {
+    cout << "Hello World";
+    return 0;
+}`,
+
+  java: `public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello World");
+    }
+}`,
+};
+
 const EditorPage = () => {
   const [lang, setLang] = useRecoilState(language);
   const [them, setThem] = useRecoilState(cmtheme);
-
   const [clients, setClients] = useState([]);
 
   const socketRef = useRef(null);
-  const codeRef = useRef(null);
+  const codeRef = useRef(STARTER_CODES[lang] || STARTER_CODES.javascript);
   const location = useLocation();
   const { roomId } = useParams();
   const reactNavigator = useNavigate();
@@ -34,29 +53,30 @@ const EditorPage = () => {
   useEffect(() => {
     const init = async () => {
       socketRef.current = await initSocket();
-      socketRef.current.on("connect_error", (err) => handleErrors(err));
-      socketRef.current.on("connect_failed", (err) => handleErrors(err));
 
-      function handleErrors(e) {
+      const handleErrors = (e) => {
         console.log("socket error", e);
         toast.error("Socket connection failed, try again later.");
         reactNavigator("/");
-      }
+      };
+
+      socketRef.current.on("connect_error", handleErrors);
+      socketRef.current.on("connect_failed", handleErrors);
 
       socketRef.current.emit(ACTIONS.JOIN, {
         roomId,
         username: location.state?.username,
       });
 
-      // Listening for joined event
       socketRef.current.on(
         ACTIONS.JOINED,
         ({ clients, username, socketId }) => {
           if (username !== location.state?.username) {
             toast.success(`${username} joined the room.`);
-            console.log(`${username} joined`);
           }
+
           setClients(clients);
+
           socketRef.current.emit(ACTIONS.SYNC_CODE, {
             code: codeRef.current,
             socketId,
@@ -64,26 +84,43 @@ const EditorPage = () => {
         }
       );
 
-      // Listening for disconnected
       socketRef.current.on(ACTIONS.DISCONNECTED, ({ socketId, username }) => {
         toast.success(`${username} left the room.`);
-        setClients((prev) => {
-          return prev.filter((client) => client.socketId !== socketId);
-        });
+        setClients((prev) =>
+          prev.filter((client) => client.socketId !== socketId)
+        );
       });
     };
+
     init();
+
     return () => {
-      socketRef.current.off(ACTIONS.JOINED);
-      socketRef.current.off(ACTIONS.DISCONNECTED);
-      socketRef.current.disconnect();
+      if (socketRef.current) {
+        socketRef.current.off(ACTIONS.JOINED);
+        socketRef.current.off(ACTIONS.DISCONNECTED);
+        socketRef.current.disconnect();
+      }
     };
-  }, []);
+  }, [roomId, location.state?.username, reactNavigator]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const currentEditorCode = editorInstanceRef.current?.getCode?.() || "";
+
+      if (!currentEditorCode.trim()) {
+        const defaultCode = STARTER_CODES[lang] || STARTER_CODES.javascript;
+        editorInstanceRef.current?.setCode(defaultCode);
+        codeRef.current = defaultCode;
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [lang]);
 
   async function copyRoomId() {
     try {
       await navigator.clipboard.writeText(roomId);
-      toast.success("Room ID has been copied to clipboard");
+      toast.success("Room ID copied to clipboard");
     } catch (err) {
       toast.error("Could not copy the Room ID");
       console.error(err);
@@ -94,44 +131,42 @@ const EditorPage = () => {
     reactNavigator("/");
   }
 
-  if (!location.state) {
-    return <Navigate to="/" />;
-  }
-
   function handleFileUpload(event) {
-    console.log("hello");
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = function (e) {
-        const fileContent = e.target.result;
-        setFileContent(fileContent);
+        const uploadedContent = e.target.result;
+        setFileContent(uploadedContent);
         setFilePreview(true);
       };
       reader.readAsText(file);
     }
   }
+
   const resetFileInput = () => {
     if (fileInputRef.current) {
-    fileInputRef.current.value = "";
+      fileInputRef.current.value = "";
     }
   };
 
   const updateEditorCode = (newCode) => {
     editorInstanceRef.current?.setCode(newCode);
     codeRef.current = newCode;
-    socketRef.current.emit(ACTIONS.CODE_CHANGE, {
-      roomId,
-      code: newCode,
-    });
+
+    if (socketRef.current) {
+      socketRef.current.emit(ACTIONS.CODE_CHANGE, {
+        roomId,
+        code: newCode,
+      });
+    }
   };
 
   const handleAppendCode = () => {
-  const currentCode = codeRef.current || "";
-
-  const appendedCode = currentCode
-    ? `${currentCode}\n\n${fileContent}`
-    : fileContent;
+    const currentCode = codeRef.current || "";
+    const appendedCode = currentCode
+      ? `${currentCode}\n\n${fileContent}`
+      : fileContent;
 
     updateEditorCode(appendedCode);
     setFilePreview(false);
@@ -144,16 +179,48 @@ const EditorPage = () => {
     resetFileInput();
   };
 
+  const handleLanguageChange = (e) => {
+    const newLang = e.target.value;
+    setLang(newLang);
 
+    const newCode = STARTER_CODES[newLang] || "";
+    updateEditorCode(newCode);
+
+    toast.success(`${newLang.toUpperCase()} template loaded`);
+  };
+
+  if (!location.state) {
+    return <Navigate to="/" />;
+  }
 
   return (
     <div className="mainWrap">
       <div className="aside">
         <div className="asideInner">
           <div className="logo">
-            <img className="logoImage" src="/logo.png" alt="logo" />
+            <h2
+              style={{
+                color: "#4AED88",
+                margin: "0 0 8px 0",
+                fontSize: "28px",
+                fontWeight: "700",
+              }}
+            >
+              SyncLab
+            </h2>
+            <p
+              style={{
+                color: "#aaa",
+                margin: 0,
+                fontSize: "13px",
+              }}
+            >
+              Real-time collaborative coding
+            </p>
           </div>
-          <h3>Connected</h3>
+
+          <h3>Connected Users</h3>
+
           <div className="clientsList">
             {clients.map((client) => (
               <Client key={client.socketId} username={client.username} />
@@ -161,50 +228,43 @@ const EditorPage = () => {
           </div>
         </div>
 
-        <input type="file" accept=".js,.py,.java,.cpp,.c,.txt,.html,.css" style={{ display: "none" }} id="fileUpload" onChange={handleFileUpload} ref={fileInputRef} />
-        <button className="uploadFileBtn" onClick={() => document.getElementById("fileUpload").click()}>
+        <input
+          type="file"
+          accept=".js,.py,.java,.cpp,.c,.txt,.html,.css"
+          style={{ display: "none" }}
+          id="fileUpload"
+          onChange={handleFileUpload}
+          ref={fileInputRef}
+        />
+
+        <button
+          className="uploadFileBtn"
+          onClick={() => document.getElementById("fileUpload").click()}
+        >
           Upload File
         </button>
-        {
-          filePreview && <FilePreview 
+
+        {filePreview && (
+          <FilePreview
             setFilePreview={setFilePreview}
             fileContent={fileContent}
             resetFileInput={resetFileInput}
             onAppend={handleAppendCode}
-            onReplace={handleReplaceCode}/>
-        }
+            onReplace={handleReplaceCode}
+          />
+        )}
 
         <label>
           Select Language:
           <select
             value={lang}
-            onChange={(e) => {
-              setLang(e.target.value);
-              window.location.reload();
-            }}
+            onChange={handleLanguageChange}
             className="seLang"
           >
-            <option value="clike">C / C++ / C# / Java</option>
-            <option value="css">CSS</option>
-            <option value="dart">Dart</option>
-            <option value="django">Django</option>
-            <option value="dockerfile">Dockerfile</option>
-            <option value="go">Go</option>
-            <option value="htmlmixed">HTML-mixed</option>
             <option value="javascript">JavaScript</option>
-            <option value="jsx">JSX</option>
-            <option value="markdown">Markdown</option>
-            <option value="php">PHP</option>
             <option value="python">Python</option>
-            <option value="r">R</option>
-            <option value="rust">Rust</option>
-            <option value="ruby">Ruby</option>
-            <option value="sass">Sass</option>
-            <option value="shell">Shell</option>
-            <option value="sql">SQL</option>
-            <option value="swift">Swift</option>
-            <option value="xml">XML</option>
-            <option value="yaml">yaml</option>
+            <option value="cpp">C++</option>
+            <option value="java">Java</option>
           </select>
         </label>
 
@@ -212,11 +272,7 @@ const EditorPage = () => {
           Select Theme:
           <select
             value={them}
-            onChange={(e) => {
-              //   setCode(codeRef.current);
-              setThem(e.target.value);
-              //   window.location.reload();
-            }}
+            onChange={(e) => setThem(e.target.value)}
             className="seLang"
           >
             <option value="default">default</option>
@@ -288,10 +344,11 @@ const EditorPage = () => {
         </label>
 
         <button className="btn copyBtn" onClick={copyRoomId}>
-          Copy ROOM ID
+          Copy Room ID
         </button>
+
         <button className="btn leaveBtn" onClick={leaveRoom}>
-          Leave
+          Leave Room
         </button>
       </div>
 
@@ -301,7 +358,6 @@ const EditorPage = () => {
           socketRef={socketRef}
           roomId={roomId}
           onCodeChange={(code) => {
-            console.log("on code change" + code);
             codeRef.current = code;
           }}
         />

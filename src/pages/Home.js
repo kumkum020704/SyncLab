@@ -1,7 +1,7 @@
-import React, {useState} from 'react';
-import {v4 as uuidV4} from 'uuid';
+import React, { useState } from 'react';
+import { v4 as uuidV4 } from 'uuid';
 import toast from 'react-hot-toast';
-import {Link, useNavigate} from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Home = () => {
     const navigate = useNavigate();
@@ -13,16 +13,15 @@ const Home = () => {
         e.preventDefault();
         const id = uuidV4();
         setRoomId(id);
-        toast.success('Created a new room');
+        toast.success('New room created successfully');
     };
 
     const joinRoom = () => {
         if (!roomId || !username) {
-            toast.error('ROOM ID & username is required');
+            toast.error('Room ID and username are required');
             return;
         }
 
-        // Redirect
         navigate(`/editor/${roomId}`, {
             state: {
                 username,
@@ -39,48 +38,101 @@ const Home = () => {
     return (
         <div className="homePageWrapper">
             <div className="formWrapper">
-                <img
-                    className="homePageLogo"
-                    src="/logo.png"
-                    alt="code-sync-logo"
-                />
-                <h4 className="mainLabel">Generate new room or paste invitation ROOM ID</h4>
+                <div style={{ textAlign: 'center', marginBottom: '22px' }}>
+                    <h1
+                        style={{
+                            color: '#4AED88',
+                            marginBottom: '8px',
+                            fontSize: '42px',
+                            fontWeight: '700',
+                            letterSpacing: '1px',
+                        }}
+                    >
+                        SyncLab
+                    </h1>
+
+                    <p
+                        style={{
+                            color: '#bdbdbd',
+                            margin: 0,
+                            fontSize: '15px',
+                        }}
+                    >
+                        Code together in real-time with your team
+                    </p>
+                </div>
+
+                <h4
+                    className="mainLabel"
+                    style={{
+                        textAlign: 'center',
+                        marginBottom: '18px',
+                        fontSize: '24px',
+                        lineHeight: '1.4',
+                    }}
+                >
+                    Create a coding room or join an existing session
+                </h4>
+
                 <div className="inputGroup">
                     <input
                         type="text"
                         className="inputBox"
-                        placeholder="ROOM ID"
+                        placeholder="Enter Room ID"
                         onChange={(e) => setRoomId(e.target.value)}
                         value={roomId}
                         onKeyUp={handleInputEnter}
                     />
+
                     <input
                         type="text"
                         className="inputBox"
-                        placeholder="USERNAME"
+                        placeholder="Enter Username"
                         onChange={(e) => setUsername(e.target.value)}
                         value={username}
                         onKeyUp={handleInputEnter}
                     />
-                    <button className="btn joinBtn" onClick={joinRoom}>
-                        Join
+
+                    <button
+                        className="btn joinBtn"
+                        onClick={joinRoom}
+                        style={{ marginTop: '10px' }}
+                    >
+                        Join Room
                     </button>
-                    <span className="createInfo">
-                        If you don't have an invite then create &nbsp;
+
+                    <span
+                        className="createInfo"
+                        style={{
+                            display: 'block',
+                            textAlign: 'center',
+                            marginTop: '18px',
+                            fontSize: '18px',
+                        }}
+                    >
+                        Don&apos;t have a room?{' '}
                         <Link
                             onClick={createNewRoom}
-                            href=""
+                            to="/"
                             className="createNewBtn"
                         >
-                            new room
+                            Create New Room
                         </Link>
                     </span>
                 </div>
             </div>
+
             <footer>
                 <h4>
-                    Build by &nbsp;
-                    <Link href="https://github.com/Mohitur669" target="_blank" rel="noopener noreferrer">Mohd Mohitur Rahaman</Link>
+                    Built with ❤️ by{' '}
+                    <a
+                        href="https://github.com/kumkum020704"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#4AED88', textDecoration: 'none' }}
+                    >
+                        Kumkum
+                    </a>
                 </h4>
             </footer>
         </div>

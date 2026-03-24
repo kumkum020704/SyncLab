@@ -26,19 +26,28 @@ body {
     justify-content: center;
     color: #fff;
     height: 100vh;
+    background: transparent;
 }
 
 .formWrapper {
-    background: #282a36;
-    padding: 20px;
-    border-radius: 10px;
-    width: 400px;
+    background: #1c1f35;
+    padding: 32px 28px;
+    border-radius: 16px;
+    width: 420px;
     max-width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s ease;
+}
+
+.formWrapper:hover {
+    transform: translateY(-2px);
 }
 
 footer {
     position: fixed;
-    bottom: 0;
+    bottom: 10px;
+    font-size: 14px;
+    opacity: 0.8;
 }
 
 footer a {
@@ -61,14 +70,18 @@ footer a {
 }
 
 .inputBox {
-    padding: 10px;
-    border-radius: 5px;
+    padding: 14px 16px;
+    border-radius: 10px;
     outline: none;
     border: none;
     margin-bottom: 14px;
-    background: #eee;
-    font-size: 16px;
-    font-weight: bold;
+    background: #2a2d45;
+    color: white;
+    font-size: 15px;
+}
+
+.inputBox::placeholder {
+    color: #aaa;
 }
 
 .btn {
@@ -92,9 +105,15 @@ footer a {
 }
 
 .joinBtn {
-    background: var(--join-color);
-    width: 100px;
+    background: linear-gradient(135deg, #4aed88, #40be70);
+    width: 120px;
     margin-left: auto;
+    color: #000;
+    font-weight: 600;
+}
+
+.joinBtn:hover {
+    transform: scale(1.05);
 }
 
 .joinBtn:hover {
@@ -120,10 +139,12 @@ footer a {
 }
 
 .createNewBtn {
-    color: #40be70;
-    text-decoration: none;
-    transition: all 0.3s ease-in-out;
-    font-weight: 500 !important;
+    color: #4aed88;
+    font-weight: 600;
+}
+
+.createNewBtn:hover {
+    text-decoration: underline;
 }
 
 .createNewBtn:hover {
