@@ -121,6 +121,30 @@ const EditorPage = () => {
     return () => clearTimeout(timer);
   }, [lang]);
 
+  useEffect(() => {
+    const loadSavedCode = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/load/${roomId}`);
+        const data = await res.json();
+
+        if (data.success && data.data?.code) {
+          editorInstanceRef.current?.setCode(data.data.code);
+          codeRef.current = data.data.code;
+
+          if (data.data.language) {
+            setLang(data.data.language);
+          }
+
+          toast.success("Saved code loaded");
+        }
+      } catch (err) {
+        console.log("Load failed", err);
+      }
+    };
+
+    loadSavedCode();
+  }, [roomId, setLang]);
+
   async function copyRoomId() {
     try {
       await navigator.clipboard.writeText(roomId);
@@ -240,9 +264,41 @@ const EditorPage = () => {
     } catch (error) {
       console.error("Frontend run error:", error);
       setRunStatus("Execution Failed");
-      setRunOutput(error.message || "Something went wrong while running the code.");
+      setRunOutput(
+        error.message || "Something went wrong while running the code."
+      );
     } finally {
       setIsRunning(false);
+    }
+  };
+
+  const handleSaveCode = async () => {
+    try {
+      const currentCode =
+        editorInstanceRef.current?.getCode?.() || codeRef.current || "";
+
+      const response = await fetch("http://localhost:5000/api/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          roomId,
+          code: currentCode,
+          language: lang,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success("Code saved successfully 🚀");
+      } else {
+        toast.error("Save failed");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Save failed");
     }
   };
 
@@ -435,6 +491,18 @@ const EditorPage = () => {
             }}
           >
             {isRunning ? "Running..." : "Run Code"}
+          </button>
+
+          <button
+            className="btn"
+            onClick={handleSaveCode}
+            style={{
+              background: "#60a5fa",
+              color: "#000",
+              minWidth: "120px",
+            }}
+          >
+            Save Code
           </button>
 
           <input

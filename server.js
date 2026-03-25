@@ -1,12 +1,27 @@
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
+const mongoose = require("mongoose");
 const { Server } = require("socket.io");
 
 const ACTIONS = require("./src/actions/Actions");
 
 const app = express();
 const server = http.createServer(app);
+
+mongoose
+  .connect("mongodb://127.0.0.1:27017/synclab")
+  .then(() => console.log("MongoDB Connected"))
+  .catch((err) => console.error("MongoDB connection error:", err));
+
+const SessionSchema = new mongoose.Schema({
+  roomId: String,
+  code: String,
+  language: String,
+  updatedAt: { type: Date, default: Date.now },
+});
+
+const Session = mongoose.model("Session", SessionSchema);
 
 app.use(
   cors({
@@ -259,8 +274,49 @@ app.post("/api/run", async (req, res) => {
   }
 });
 
+app.post("/api/save", async (req, res) => {
+  try {
+    const { roomId, code, language } = req.body;
+
+    let session = await Session.findOne({ roomId });
+
+    if (session) {
+      session.code = code;
+      session.language = language;
+      session.updatedAt = Date.now();
+    } else {
+      session = new Session({
+        roomId,
+        code,
+        language,
+      });
+    }
+
+    await session.save();
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("SAVE ERROR:", err);
+    res.json({ success: false });
+  }
+});
+
+app.get("/api/load/:roomId", async (req, res) => {
+  try {
+    const session = await Session.findOne({ roomId: req.params.roomId });
+
+    res.json({
+      success: true,
+      data: session,
+    });
+  } catch (err) {
+    console.error("LOAD ERROR:", err);
+    res.json({ success: false });
+  }
+});
+
 const PORT = process.env.SERVER_PORT || 5000;
 
 server.listen(PORT, () => {
-  console.log(`Listening on port ${PORT}`);
+  console.log(`Server running on ${PORT}`);
 });
