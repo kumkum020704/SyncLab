@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import Client from "../components/Client";
 import Editor from "../components/Editor";
 import FilePreview from "../components/FilePreview";
-import { language, cmtheme } from "../../src/atoms";
+import { language, cmtheme } from "../atoms";
 import { useRecoilState } from "recoil";
 import ACTIONS from "../actions/Actions";
 import { initSocket } from "../socket";
@@ -42,6 +42,9 @@ const EditorPage = () => {
   const [runOutput, setRunOutput] = useState("");
   const [runStatus, setRunStatus] = useState("");
   const [isRunning, setIsRunning] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [chatInput, setChatInput] = useState("");
+  const [socketReady, setSocketReady] = useState(false);
 
   const socketRef = useRef(null);
   const codeRef = useRef(STARTER_CODES[lang] || STARTER_CODES.javascript);
@@ -57,6 +60,7 @@ const EditorPage = () => {
   useEffect(() => {
     const init = async () => {
       socketRef.current = await initSocket();
+      setSocketReady(true);
 
       const handleErrors = (e) => {
         console.log("socket error", e);
@@ -94,6 +98,10 @@ const EditorPage = () => {
           prev.filter((client) => client.socketId !== socketId)
         );
       });
+
+      socketRef.current.on(ACTIONS.CHAT_MESSAGE, (messageData) => {
+        setMessages((prev) => [...prev, messageData]);
+      });
     };
 
     init();
@@ -102,6 +110,7 @@ const EditorPage = () => {
       if (socketRef.current) {
         socketRef.current.off(ACTIONS.JOINED);
         socketRef.current.off(ACTIONS.DISCONNECTED);
+        socketRef.current.off(ACTIONS.CHAT_MESSAGE);
         socketRef.current.disconnect();
       }
     };
@@ -239,7 +248,6 @@ const EditorPage = () => {
       });
 
       const data = await response.json();
-      console.log("RUN RESPONSE:", data);
 
       if (!data.success) {
         setRunStatus("Execution Failed");
@@ -302,6 +310,32 @@ const EditorPage = () => {
     }
   };
 
+  const handleSendMessage = () => {
+    if (!chatInput.trim()) return;
+
+    const messageData = {
+      username: location.state?.username,
+      message: chatInput,
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+
+    socketRef.current.emit(ACTIONS.CHAT_MESSAGE, {
+      roomId,
+      messageData,
+    });
+
+    setChatInput("");
+  };
+
+  const handleChatEnter = (e) => {
+    if (e.key === "Enter") {
+      handleSendMessage();
+    }
+  };
+
   if (!location.state) {
     return <Navigate to="/" />;
   }
@@ -321,13 +355,7 @@ const EditorPage = () => {
             >
               SyncLab
             </h2>
-            <p
-              style={{
-                color: "#aaa",
-                margin: 0,
-                fontSize: "13px",
-              }}
-            >
+            <p style={{ color: "#aaa", margin: 0, fontSize: "13px" }}>
               Real-time collaborative coding
             </p>
           </div>
@@ -338,6 +366,90 @@ const EditorPage = () => {
             {clients.map((client) => (
               <Client key={client.socketId} username={client.username} />
             ))}
+          </div>
+
+          <div
+            style={{
+              marginTop: "20px",
+              background: "#111827",
+              borderRadius: "10px",
+              padding: "12px",
+              maxHeight: "280px",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <h3 style={{ marginTop: 0, marginBottom: "10px" }}>Room Chat</h3>
+
+            <div
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                maxHeight: "180px",
+                marginBottom: "10px",
+                paddingRight: "4px",
+              }}
+            >
+              {messages.length === 0 ? (
+                <p style={{ color: "#9ca3af", fontSize: "14px" }}>
+                  No messages yet
+                </p>
+              ) : (
+                messages.map((msg, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      marginBottom: "10px",
+                      padding: "8px",
+                      background: "#1f2937",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#4AED88",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      {msg.username} • {msg.time}
+                    </div>
+                    <div style={{ fontSize: "14px", color: "#fff" }}>
+                      {msg.message}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={handleChatEnter}
+              placeholder="Type a message..."
+              style={{
+                padding: "10px",
+                borderRadius: "8px",
+                border: "none",
+                outline: "none",
+                background: "#1f2937",
+                color: "#fff",
+                marginBottom: "8px",
+              }}
+            />
+
+            <button
+              className="btn"
+              onClick={handleSendMessage}
+              style={{
+                background: "#facc15",
+                color: "#000",
+                fontWeight: "600",
+              }}
+            >
+              Send
+            </button>
           </div>
         </div>
 
@@ -389,69 +501,10 @@ const EditorPage = () => {
             className="seLang"
           >
             <option value="default">default</option>
-            <option value="3024-day">3024-day</option>
-            <option value="3024-night">3024-night</option>
-            <option value="abbott">abbott</option>
-            <option value="abcdef">abcdef</option>
-            <option value="ambiance">ambiance</option>
-            <option value="ayu-dark">ayu-dark</option>
-            <option value="ayu-mirage">ayu-mirage</option>
-            <option value="base16-dark">base16-dark</option>
-            <option value="base16-light">base16-light</option>
-            <option value="bespin">bespin</option>
-            <option value="blackboard">blackboard</option>
-            <option value="cobalt">cobalt</option>
-            <option value="colorforth">colorforth</option>
-            <option value="darcula">darcula</option>
-            <option value="duotone-dark">duotone-dark</option>
-            <option value="duotone-light">duotone-light</option>
-            <option value="eclipse">eclipse</option>
-            <option value="elegant">elegant</option>
-            <option value="erlang-dark">erlang-dark</option>
-            <option value="gruvbox-dark">gruvbox-dark</option>
-            <option value="hopscotch">hopscotch</option>
-            <option value="icecoder">icecoder</option>
-            <option value="idea">idea</option>
-            <option value="isotope">isotope</option>
-            <option value="juejin">juejin</option>
-            <option value="lesser-dark">lesser-dark</option>
-            <option value="liquibyte">liquibyte</option>
-            <option value="lucario">lucario</option>
+            <option value="dracula">dracula</option>
             <option value="material">material</option>
-            <option value="material-darker">material-darker</option>
-            <option value="material-palenight">material-palenight</option>
-            <option value="material-ocean">material-ocean</option>
-            <option value="mbo">mbo</option>
-            <option value="mdn-like">mdn-like</option>
-            <option value="midnight">midnight</option>
             <option value="monokai">monokai</option>
-            <option value="moxer">moxer</option>
-            <option value="neat">neat</option>
-            <option value="neo">neo</option>
-            <option value="night">night</option>
             <option value="nord">nord</option>
-            <option value="oceanic-next">oceanic-next</option>
-            <option value="panda-syntax">panda-syntax</option>
-            <option value="paraiso-dark">paraiso-dark</option>
-            <option value="paraiso-light">paraiso-light</option>
-            <option value="pastel-on-dark">pastel-on-dark</option>
-            <option value="railscasts">railscasts</option>
-            <option value="rubyblue">rubyblue</option>
-            <option value="seti">seti</option>
-            <option value="shadowfox">shadowfox</option>
-            <option value="solarized">solarized</option>
-            <option value="the-matrix">the-matrix</option>
-            <option value="tomorrow-night-bright">tomorrow-night-bright</option>
-            <option value="tomorrow-night-eighties">
-              tomorrow-night-eighties
-            </option>
-            <option value="ttcn">ttcn</option>
-            <option value="twilight">twilight</option>
-            <option value="vibrant-ink">vibrant-ink</option>
-            <option value="xq-dark">xq-dark</option>
-            <option value="xq-light">xq-light</option>
-            <option value="yeti">yeti</option>
-            <option value="yonce">yonce</option>
             <option value="zenburn">zenburn</option>
           </select>
         </label>
@@ -526,6 +579,7 @@ const EditorPage = () => {
         <Editor
           ref={editorInstanceRef}
           socketRef={socketRef}
+          socketReady={socketReady}
           roomId={roomId}
           onCodeChange={(code) => {
             codeRef.current = code;

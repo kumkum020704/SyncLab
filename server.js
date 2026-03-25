@@ -89,6 +89,14 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on(ACTIONS.CHAT_MESSAGE, ({ roomId, messageData }) => {
+    try {
+      io.to(roomId).emit(ACTIONS.CHAT_MESSAGE, messageData);
+    } catch (error) {
+      console.error("CHAT_MESSAGE error:", error);
+    }
+  });
+
   socket.on("disconnecting", () => {
     try {
       const rooms = [...socket.rooms];
@@ -129,12 +137,6 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 app.post("/api/run", async (req, res) => {
   try {
     const { code, language, stdin = "" } = req.body;
-
-    console.log("RUN REQUEST:", {
-      language,
-      hasCode: !!code,
-      inputProvided: !!stdin,
-    });
 
     if (!code || !language) {
       return res.status(400).json({
@@ -177,8 +179,6 @@ app.post("/api/run", async (req, res) => {
     );
 
     const createText = await createResponse.text();
-    console.log("CREATE STATUS:", createResponse.status);
-    console.log("CREATE RESPONSE:", createText);
 
     if (!createResponse.ok) {
       return res.status(500).json({
@@ -223,8 +223,6 @@ app.post("/api/run", async (req, res) => {
       );
 
       const resultText = await resultResponse.text();
-      console.log(`POLL ${i + 1} STATUS:`, resultResponse.status);
-      console.log(`POLL ${i + 1} RESPONSE:`, resultText);
 
       if (!resultResponse.ok) {
         return res.status(500).json({
@@ -248,8 +246,6 @@ app.post("/api/run", async (req, res) => {
         break;
       }
     }
-
-    console.log("FINAL RESULT:", result);
 
     return res.json({
       success: true,

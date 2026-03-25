@@ -4,7 +4,7 @@ import React, {
   useImperativeHandle,
   forwardRef,
 } from "react";
-import { language, cmtheme } from "../../src/atoms";
+import { language, cmtheme } from "../atoms";
 import { useRecoilValue } from "recoil";
 import ACTIONS from "../actions/Actions";
 
@@ -103,86 +103,88 @@ const getEditorMode = (lang) => {
   }
 };
 
-const Editor = forwardRef(({ socketRef, roomId, onCodeChange }, ref) => {
-  const editorRef = useRef(null);
-  const lang = useRecoilValue(language);
-  const editorTheme = useRecoilValue(cmtheme);
+const Editor = forwardRef(
+  ({ socketRef, socketReady, roomId, onCodeChange }, ref) => {
+    const editorRef = useRef(null);
+    const lang = useRecoilValue(language);
+    const editorTheme = useRecoilValue(cmtheme);
 
-  useImperativeHandle(ref, () => ({
-    setCode: (code) => {
-      if (editorRef.current) {
-        editorRef.current.setValue(code);
-      }
-    },
-    getCode: () => {
-      return editorRef.current ? editorRef.current.getValue() : "";
-    },
-  }));
-
-  useEffect(() => {
-    if (!editorRef.current) {
-      editorRef.current = Codemirror.fromTextArea(
-        document.getElementById("realtimeEditor"),
-        {
-          mode: getEditorMode(lang),
-          theme: editorTheme,
-          autoCloseTags: true,
-          autoCloseBrackets: true,
-          lineNumbers: true,
-          lineWrapping: true,
-        }
-      );
-
-      editorRef.current.on("change", (instance, changes) => {
-        const { origin } = changes;
-        const code = instance.getValue();
-
-        onCodeChange(code);
-
-        if (origin !== "setValue") {
-          socketRef.current.emit(ACTIONS.CODE_CHANGE, {
-            roomId,
-            code,
-          });
-        }
-      });
-    }
-  }, [onCodeChange, roomId, socketRef, lang, editorTheme]);
-
-  useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.setOption("mode", getEditorMode(lang));
-    }
-  }, [lang]);
-
-  useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.setOption("theme", editorTheme);
-    }
-  }, [editorTheme]);
-
-  useEffect(() => {
-    if (!socketRef.current) return;
-
-    const handleCodeChange = ({ code }) => {
-      if (code !== null && editorRef.current) {
-        const currentCode = editorRef.current.getValue();
-        if (currentCode !== code) {
+    useImperativeHandle(ref, () => ({
+      setCode: (code) => {
+        if (editorRef.current) {
           editorRef.current.setValue(code);
         }
+      },
+      getCode: () => {
+        return editorRef.current ? editorRef.current.getValue() : "";
+      },
+    }));
+
+    useEffect(() => {
+      if (!editorRef.current) {
+        editorRef.current = Codemirror.fromTextArea(
+          document.getElementById("realtimeEditor"),
+          {
+            mode: getEditorMode(lang),
+            theme: editorTheme,
+            autoCloseTags: true,
+            autoCloseBrackets: true,
+            lineNumbers: true,
+            lineWrapping: true,
+          }
+        );
+
+        editorRef.current.on("change", (instance, changes) => {
+          const { origin } = changes;
+          const code = instance.getValue();
+
+          onCodeChange(code);
+
+          if (origin !== "setValue" && socketRef.current) {
+            socketRef.current.emit(ACTIONS.CODE_CHANGE, {
+              roomId,
+              code,
+            });
+          }
+        });
       }
-    };
+    }, [lang, editorTheme, onCodeChange, roomId, socketRef]);
 
-    socketRef.current.on(ACTIONS.CODE_CHANGE, handleCodeChange);
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.off(ACTIONS.CODE_CHANGE, handleCodeChange);
+    useEffect(() => {
+      if (editorRef.current) {
+        editorRef.current.setOption("mode", getEditorMode(lang));
       }
-    };
-  }, [socketRef]);
+    }, [lang]);
 
-  return <textarea id="realtimeEditor"></textarea>;
-});
+    useEffect(() => {
+      if (editorRef.current) {
+        editorRef.current.setOption("theme", editorTheme);
+      }
+    }, [editorTheme]);
+
+    useEffect(() => {
+      if (!socketReady || !socketRef.current) return;
+
+      const handleRemoteCodeChange = ({ code }) => {
+        if (code !== null && editorRef.current) {
+          const currentCode = editorRef.current.getValue();
+          if (currentCode !== code) {
+            editorRef.current.setValue(code);
+          }
+        }
+      };
+
+      socketRef.current.on(ACTIONS.CODE_CHANGE, handleRemoteCodeChange);
+
+      return () => {
+        if (socketRef.current) {
+          socketRef.current.off(ACTIONS.CODE_CHANGE, handleRemoteCodeChange);
+        }
+      };
+    }, [socketReady, socketRef]);
+
+    return <textarea id="realtimeEditor"></textarea>;
+  }
+);
 
 export default Editor;
