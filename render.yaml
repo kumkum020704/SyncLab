@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: synclab-backend
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install --force
+    startCommand: node server.js
+    envVars:
+      - key: SERVER_PORT
+        value: 5000
+      - key: JUDGE0_BASE_URL
+        value: https://ce.judge0.com
+      - key: MONGODB_URI
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
