@@ -67,3 +67,6 @@ SyncLab is a full-stack real-time collaborative code editor that allows multiple
 ```bash
 git clone https://github.com/kumkum020704/SyncLab.git
 cd SyncLab
+
+Deployed
+https://synclab2-client.vercel.app/
