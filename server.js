@@ -10,6 +10,17 @@ const app = express();
 const server = http.createServer(app);
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+const ALLOWED_ORIGINS = [
+  FRONTEND_URL,
+  "http://localhost:3000",
+  "http://localhost:3001",
+];
+const corsOriginFn = (origin, callback) => {
+  // Allow requests with no origin (e.g. curl, Postman, server-to-server)
+  if (!origin) return callback(null, true);
+  if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+  callback(new Error(`CORS: origin '${origin}' not allowed`));
+};
 const PORT = process.env.SERVER_PORT || 5000;
 const MONGODB_URI =
   process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/synclab";
@@ -32,9 +43,10 @@ const Session = mongoose.model("Session", SessionSchema);
 
 app.use(
   cors({
-    origin: FRONTEND_URL,
+    origin: corsOriginFn,
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
+    credentials: true,
   })
 );
 
@@ -42,8 +54,9 @@ app.use(express.json());
 
 const io = new Server(server, {
   cors: {
-    origin: FRONTEND_URL,
+    origin: corsOriginFn,
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
