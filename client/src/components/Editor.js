@@ -163,7 +163,9 @@ const Editor = forwardRef(
     }, [editorTheme]);
 
     useEffect(() => {
-      if (!socketReady || !socketRef.current) return;
+      const socket = socketRef.current;
+
+      if (!socketReady || !socket) return;
 
       const handleRemoteCodeChange = ({ code }) => {
         if (code !== null && editorRef.current) {
@@ -174,12 +176,10 @@ const Editor = forwardRef(
         }
       };
 
-      socketRef.current.on(ACTIONS.CODE_CHANGE, handleRemoteCodeChange);
+      socket.on(ACTIONS.CODE_CHANGE, handleRemoteCodeChange);
 
       return () => {
-        if (socketRef.current) {
-          socketRef.current.off(ACTIONS.CODE_CHANGE, handleRemoteCodeChange);
-        }
+        socket.off(ACTIONS.CODE_CHANGE, handleRemoteCodeChange);
       };
     }, [socketReady, socketRef]);
 
