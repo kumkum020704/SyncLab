@@ -9,15 +9,22 @@ const ACTIONS = require("./src/actions/Actions");
 const app = express();
 const server = http.createServer(app);
 
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+const PORT = process.env.SERVER_PORT || 5000;
+const MONGODB_URI =
+  process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/synclab";
+const JUDGE0_BASE_URL =
+  process.env.JUDGE0_BASE_URL || "https://ce.judge0.com";
+
 mongoose
-  .connect("mongodb://127.0.0.1:27017/synclab")
+  .connect(MONGODB_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
 const SessionSchema = new mongoose.Schema({
-  roomId: String,
-  code: String,
-  language: String,
+  roomId: { type: String, required: true, unique: true },
+  code: { type: String, default: "" },
+  language: { type: String, default: "javascript" },
   updatedAt: { type: Date, default: Date.now },
 });
 
@@ -25,7 +32,7 @@ const Session = mongoose.model("Session", SessionSchema);
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: FRONTEND_URL,
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
   })
@@ -35,7 +42,7 @@ app.use(express.json());
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: FRONTEND_URL,
     methods: ["GET", "POST"],
   },
 });
@@ -122,7 +129,7 @@ io.on("connection", (socket) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("Backend is running");
+  res.send("SyncLab backend is running");
 });
 
 const LANGUAGE_IDS = {
@@ -154,9 +161,6 @@ app.post("/api/run", async (req, res) => {
       });
     }
 
-    const judge0BaseUrl =
-      process.env.JUDGE0_BASE_URL || "https://ce.judge0.com";
-
     const headers = {
       "Content-Type": "application/json",
     };
@@ -166,7 +170,7 @@ app.post("/api/run", async (req, res) => {
     }
 
     const createResponse = await fetch(
-      `${judge0BaseUrl}/submissions?base64_encoded=false&wait=false`,
+      `${JUDGE0_BASE_URL}/submissions?base64_encoded=false&wait=false`,
       {
         method: "POST",
         headers,
@@ -215,7 +219,7 @@ app.post("/api/run", async (req, res) => {
       await sleep(1200);
 
       const resultResponse = await fetch(
-        `${judge0BaseUrl}/submissions/${token}?base64_encoded=false&fields=stdout,stderr,compile_output,message,status,time,memory`,
+        `${JUDGE0_BASE_URL}/submissions/${token}?base64_encoded=false&fields=stdout,stderr,compile_output,message,status,time,memory`,
         {
           method: "GET",
           headers,
@@ -310,8 +314,6 @@ app.get("/api/load/:roomId", async (req, res) => {
     res.json({ success: false });
   }
 });
-
-const PORT = process.env.SERVER_PORT || 5000;
 
 server.listen(PORT, () => {
   console.log(`Server running on ${PORT}`);
